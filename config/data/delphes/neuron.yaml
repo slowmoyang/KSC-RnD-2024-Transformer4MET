@@ -16,3 +16,4 @@ val_files:
   - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000010-0.root
 test_files:
   - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000020-0.root
+train_sampler_class_path: diffmet.data.samplers.FlatGenMETpTRandomSampler
