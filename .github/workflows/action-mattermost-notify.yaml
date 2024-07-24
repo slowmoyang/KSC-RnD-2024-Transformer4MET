@@ -11,6 +11,18 @@ on:
     types: [created, edited]
 
 jobs:
+  notify_push:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+    steps:
+      - name: mattermost-notify
+        uses: mattermost/action-mattermost-notify@master
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          MATTERMOST_USERNAME: ${{ vars.MATTERMOST_USERNAME }}
+          MATTERMOST_ICON_URL: ${{ vars.MATTERMOST_ICON }}
+          TEXT: |-
+            :github: ${{ github.event.pusher.name }} pushed commit
   notify_pr:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' }}
