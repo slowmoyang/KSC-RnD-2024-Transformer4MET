@@ -31,6 +31,7 @@ class FlatGenMETpTRandomSampler(WeightedRandomSampler):
             warnings.warn(message='found empty bin')
             hist.clamp_(1, None) # FIXME warning
 
+        # FIXME
         pdf = hist / len(hist)
 
         bins = torch.bucketize(gen_met_pt, boundaries=boundaries, right=False) - 1

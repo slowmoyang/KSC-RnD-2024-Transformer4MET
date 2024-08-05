@@ -1,0 +1,25 @@
+model:
+  class_path: diffmet.models.DelphesModel
+  init_args:
+    projection:
+      class_path: diffmet.nn.delphes.PFMerger
+      init_args:
+        track_dim: 8
+        tower_dim: 4
+        embed_dim: ${model.init_args.backbone.init_args.embed_dim}
+    backbone:
+      class_path: diffmet.nn.perceiver.Perceiver
+      init_args:
+        latent_len: 64
+        embed_dim: 128
+        num_heads: 8
+        dropout_p: 0
+        num_layers: 2
+        activation: GELU
+        widening_factor: 4
+    regression_head:
+      class_path: torch.nn.Linear
+      init_args:
+        in_features: ${model.init_args.backbone.init_args.embed_dim}
+        out_features: 2
+        bias: false

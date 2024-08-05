@@ -1,7 +1,0 @@
-max_epochs: 100
-accelerator: gpu
-devices: 1
-log_every_n_steps: 1
-enable_progress_bar: false
-callbacks:
-  - class_path: diffmet.callbacks.ResultWriter

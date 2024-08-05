@@ -1,0 +1,16 @@
+preprocessing:
+  track:
+    class_path: diffmet.data.transforms.Normalize
+    init_args:
+      offset: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] # px, py, eta, charge, is_electron, is_muon, is_hadron, is_reco_pu
+      scale: [100.0, 100.0, 4.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+  tower:
+    class_path: diffmet.data.transforms.Normalize
+    init_args:
+      offset: [0.0, 0.0, 0.0, 0.0] # [px, py, eta, is_hadron]
+      scale: [200.0, 200.0, 5.0, 1.0]
+  gen_met:
+    class_path: diffmet.data.transforms.Normalize
+    init_args:
+      offset: [0.0, 0.0] # [px, py]
+      scale: [60, 60]

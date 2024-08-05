@@ -11,41 +11,43 @@ class DataModule(LightningDataModule):
                  train_files: list[str],
                  val_files: list[str],
                  test_files: list[str],
+                 predict_files: list[str] = [],
                  train_sampler_class_path: str | None = None,
                  batch_size: int = 256,
                  eval_batch_size: int = 512,
     ) -> None:
         super().__init__()
-        self.batch_size = batch_size
-        self.eval_batch_size = eval_batch_size
+        self.save_hyperparameters()
 
-        self.train_files = train_files
-        self.val_files = val_files
-        self.test_files = test_files
+    @cached_property
+    def dataset_cls(self):
+        return get_class(self.hparams['dataset_class_path'])
 
-        self.dataset_cls = get_class(dataset_class_path)
-
-        self.train_sampler_class_path = train_sampler_class_path
+    @cached_property
+    def train_sampler_cls(self):
+        if self.hparams['train_sampler_class_path'] is not None:
+            return get_class(self.hparams['train_sampler_class_path'])
 
     @cached_property
     def train_set(self):
-        return self.dataset_cls.from_root(self.train_files)
+        return self.dataset_cls.load(self.hparams['train_files'])
 
     @cached_property
     def val_set(self):
-        return self.dataset_cls.from_root(self.val_files)
+        return self.dataset_cls.load(self.hparams['val_files'])
 
     @cached_property
     def test_set(self):
-        return self.dataset_cls.from_root(self.test_files)
+        return self.dataset_cls.load(self.hparams['test_files'])
+
+    @cached_property
+    def predict_set(self):
+        return self.dataset_cls.load(self.hparams['predict_files'])
 
     @cached_property
     def train_sampler(self):
-        if self.train_sampler_class_path is not None:
-            sampler_class = get_class(self.train_sampler_class_path)
-            # TODO: num_samples is assuemd to be same with len(self.train_set)
-            sampler = sampler_class(self.train_set)
-            return sampler
+        if self.train_sampler_cls is not None:
+            return self.train_sampler_cls(self.train_set)
 
     def setup(self, stage: str) -> None:
         if stage == 'fit':
@@ -55,8 +57,10 @@ class DataModule(LightningDataModule):
             self.val_set
         elif stage == 'test':
             self.test_set
+        elif stage == 'predict':
+            self.predict_set
         else:
-            raise ValueError
+            raise ValueError(f'{stage=}')
 
     def teardown(self, stage: str) -> None:
         if stage == 'fit':
@@ -65,6 +69,8 @@ class DataModule(LightningDataModule):
             delattr(self, 'train_sampler')
         elif stage == 'test':
             delattr(self, 'test_set')
+        elif stage == 'predict':
+            delattr(self, 'predict_set')
 
 
     def train_dataloader(self):
@@ -78,7 +84,7 @@ class DataModule(LightningDataModule):
 
         return DataLoader(
             dataset=dataset,
-            batch_size=self.batch_size,
+            batch_size=self.hparams['batch_size'],
             collate_fn=dataset.collate,
             drop_last=True,
             **kwargs
@@ -87,7 +93,7 @@ class DataModule(LightningDataModule):
     def _eval_dataloader(self, dataset):
         return DataLoader(
             dataset=dataset,
-            batch_size=self.eval_batch_size,
+            batch_size=self.hparams['eval_batch_size'],
             shuffle=False,
             collate_fn=dataset.collate,
             drop_last=False,
@@ -98,3 +104,6 @@ class DataModule(LightningDataModule):
 
     def test_dataloader(self):
         return self._eval_dataloader(self.test_set)
+
+    def predict_dataloader(self):
+        return self._eval_dataloader(self.predict_set)
