@@ -2,17 +2,40 @@ dataset_class_path: diffmet.data.datasets.DelphesDataset
 batch_size: 128
 eval_batch_size: 128
 train_files:
-  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000000-0.root
-  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000000-1.root
-  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000000-2.root
-  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000000-3.root
-  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000000-4.root
-  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000000-5.root
-  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000000-6.root
-  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000000-7.root
-  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000000-8.root
-  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000000-9.root
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-0_low-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-1_low-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-2_low-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-0_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-1_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-2_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-3_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-4_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-5_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-6_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-7_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-8_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-9_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000001-0_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000001-1_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000001-2_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000001-3_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000001-4_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000001-5_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000001-6_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000001-7_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000001-8_high-met.h5
+  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000001-9_high-met.h5
 val_files:
   - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000010-0.root
+  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000020-0.root
 test_files:
   - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000020-0.root
+  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000020-1.root
+  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000020-2.root
+  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000020-3.root
+  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000020-4.root
+  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000020-5.root
+  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000020-6.root
+  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000020-7.root
+  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000020-8.root
+  - /scratch/x2719a04/data/ntuple/TTto2L2Nu-2Jets/000020-9.root

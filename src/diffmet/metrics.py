@@ -39,7 +39,10 @@ class Resolution(Metric):
 
     def compute(self):
         residual = dim_zero_cat(self.residual)
-        q16 = torch.quantile(residual, q=0.16, dim=0)
-        q84 = torch.quantile(residual, q=0.84, dim=0)
-        resolution = (q84 - q16) / 2
+        if len(residual):
+            q16 = torch.quantile(residual, q=0.16, dim=0)
+            q84 = torch.quantile(residual, q=0.84, dim=0)
+            resolution = (q84 - q16) / 2
+        else:
+            resolution = torch.nan
         return resolution

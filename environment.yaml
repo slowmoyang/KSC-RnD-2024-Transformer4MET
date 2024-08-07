@@ -20,6 +20,7 @@ dependencies:
   - statsmodels=0.14.1
   - hist=2.7.3
   - pdfcombine=1.1.5
+  - h5py=3.9.0
   - pip
   - pip:
     - tensordict==0.3.1
