@@ -3,7 +3,7 @@ accelerator: gpu
 devices: [0]
 log_every_n_steps: 1
 enable_progress_bar: false
-gradient_clip_val: 0.5
+gradient_clip_val: 1
 gradient_clip_algorithm: norm
 callbacks:
   - class_path: diffmet.lit.callbacks.ResultWriter
