@@ -1,20 +1,18 @@
-import inspect
+from typing import Type
 import torch
 import torch.nn as nn
+from torch import optim
 
 
-def configure_optimizers(model: nn.Module,
-                         learning_rate: float = 3e-4,
-                         beta1: float = 0.9,
-                         beta2: float = 0.95,
+def configure_optimizers(optimizer_class: Type,
+                         model: nn.Module,
+                         lr: float = 3e-4,
                          weight_decay: float = 0.1,
-                         fused: bool = True,
-                         device_type: str = 'cuda'
+                         **kwargs,
 ):
     '''
     adapted from https://github.com/karpathy/nanoGPT/blob/eba36e84649f3c6d840a93092cb779a260544d08/model.py#L263-L287
     '''
-
     # separate out all parameters to those that will and won't experience regularizing weight decay
     decay = set()
     no_decay = set()
@@ -49,16 +47,15 @@ def configure_optimizers(model: nn.Module,
     assert len(inter_params) == 0, "parameters %s made it into both decay/no_decay sets!" % (str(inter_params), )
     assert len(param_dict.keys() - union_params) == 0, "parameters %s were not separated into either decay/no_decay set!" \
                                                 % (str(param_dict.keys() - union_params), )
-
     # create the pytorch optimizer object
-    optim_groups = [
+    params = [
         {"params": [param_dict[pn] for pn in sorted(list(decay))], "weight_decay": weight_decay},
         {"params": [param_dict[pn] for pn in sorted(list(no_decay))], "weight_decay": 0.0},
     ]
     # new PyTorch nightly has a new 'fused' option for AdamW that is much faster
-    use_fused = fused and (device_type == 'cuda') and ('fused' in inspect.signature(torch.optim.AdamW).parameters)
-    print(f"using fused AdamW: {use_fused}")
-    extra_args = dict(fused=True) if use_fused else dict()
-    optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=(beta1, beta2), **extra_args)
 
-    return optimizer
+
+    if optimizer_class in (optim.Adam, optim.AdamW):
+        kwargs['fused'] = True
+
+    return optimizer_class(params, lr=lr, **kwargs)

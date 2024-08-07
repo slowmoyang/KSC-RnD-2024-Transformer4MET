@@ -1,13 +1,16 @@
 import time
+import os.path
 import numpy as np
 import awkward as ak
 from tensordict import TensorDict
 import uproot
 import vector
+import h5py as h5
+import torch
+from torch import Tensor
 from .base import TensorDictListDataset
 from .utils import convert_ak_to_tensor
 vector.register_awkward()
-
 
 class DelphesDataset(TensorDictListDataset):
 
@@ -150,16 +153,71 @@ class DelphesDataset(TensorDictListDataset):
         return cls(example_list)
 
     @classmethod
-    def from_root(cls,
-                  path_list: list[str],
-                  treepath: str = 'tree',
-                  entry_stop: int | None = None
+    def _from_h5(cls,
+                  path: str,
     ):
+        track_keys = [
+            'track_px',
+            'track_py',
+            'track_eta',
+            'track_charge',
+            'track_is_electron',
+            'track_is_muon',
+            'track_is_hadron',
+            'track_is_reco_pu',
+        ]
+
+        tower_keys = [
+            'tower_px',
+            'tower_py',
+            'tower_eta',
+            'tower_is_hadron',
+        ]
+
+
+        with h5.File(path, 'r') as file:
+            def read_pf(key_list):
+                pf = [file[key][:] for key in key_list] # type: ignore
+                pf = [torch.from_numpy(np.stack(each, axis=1).astype(np.float32))
+                      for each in zip(*pf)]
+                return pf
+
+            def read_met(prefix):
+                pt: Tensor = torch.from_numpy(file[f'{prefix}_met_pt'][:]) # type: ignore
+                phi: Tensor = torch.from_numpy(file[f'{prefix}_met_phi'][:]) # type: ignore
+                px = pt * torch.cos(phi)
+                py = pt * torch.sin(phi)
+                met = torch.stack([px, py], dim=1)
+                return met
+
+            data = dict(
+                track=read_pf(track_keys),
+                tower=read_pf(tower_keys),
+                gen_met=read_met('gen'),
+                puppi_met=read_met('puppi'),
+                pf_met=read_met('pf'),
+            )
+
+        data = [TensorDict(source=dict(zip(data.keys(), each)), batch_size=[])
+                for each in zip(*data.values())]
+        return cls(data)
+
+
+    @classmethod
+    def load(cls, path_list: list[str]):
+        _, suffix = os.path.splitext(path_list[0])
+        if suffix == '.root':
+            method = cls._from_root
+        elif suffix in ('.h5', '.hdf5'):
+            method = cls._from_h5
+        else:
+            raise RuntimeError(f'{suffix=}')
+
         dataset = cls([])
         for path in path_list:
             print(f'loading {path}', end='')
             start = time.time()
-            dataset += cls._from_root(path=path, treepath=treepath, entry_stop=entry_stop)
+            dataset += method(path=path)
             elapsed_time = time.time() - start
             print(f' ({elapsed_time:.1f} s)')
         return dataset

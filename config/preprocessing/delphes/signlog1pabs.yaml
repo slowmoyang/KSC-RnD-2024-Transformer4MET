@@ -1,0 +1,25 @@
+preprocessing:
+  track: # [px, py, eta, charge, is_electron, is_muon, is_hadron, is_reco_pu]
+    - class_path: diffmet.data.transforms.SignLog1pAbs
+      init_args:
+        idx: [0, 1]
+    - class_path: diffmet.data.transforms.Normalize
+      init_args:
+        offset: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        scale: [0.51, 0.51, 2.26, 1.0, 1.0, 1.0, 1.0, 1.0]
+  tower: # [px, py, eta, is_hadron]
+    - class_path: diffmet.data.transforms.SignLog1pAbs
+      init_args:
+        idx: [0, 1] # [px, py]
+    - class_path: diffmet.data.transforms.Normalize
+      init_args:
+        offset: [0.0, 0.0, 0.0, 0.0]
+        scale: [0.60, 0.60, 1.22, 1.0]
+  gen_met: # [px, py]
+    - class_path: diffmet.data.transforms.SignLog1pAbs
+      init_args:
+        idx: [0, 1] # [px, py]
+    - class_path: diffmet.data.transforms.Normalize
+      init_args:
+        offset: [0.0, 0.0]
+        scale: [3.67, 3.67]

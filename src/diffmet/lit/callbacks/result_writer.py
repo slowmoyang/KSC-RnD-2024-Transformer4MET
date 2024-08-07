@@ -1,5 +1,5 @@
+from pathlib import Path
 from typing import cast
-import os.path
 import uproot.writing
 from hist.hist import Hist
 from hist.axis import Regular
@@ -8,6 +8,7 @@ from tensordict import TensorDict
 import vector
 import numpy as np
 from lightning.pytorch.callbacks import Callback
+from ...analysis import analyse_result
 
 
 class ResultWriter(Callback):
@@ -45,7 +46,10 @@ class ResultWriter(Callback):
         }
 
     def on_test_start(self, trainer, pl_module) -> None:
-        path = os.path.join(trainer.log_dir, 'output.root') # type: ignore
+        if trainer.log_dir is None:
+            raise RuntimeError
+        log_dir = Path(trainer.log_dir)
+        path = log_dir / 'output.root'
         self.file = uproot.writing.create(path)
 
         # FIXME
@@ -73,11 +77,11 @@ class ResultWriter(Callback):
         ########################################################################
         # undo preprocessing
         ########################################################################
-        if 'gen_met_norm' in pl_module.preprocessing.keys():
-            gen_met_norm = pl_module.preprocessing['gen_met_norm']
+        if 'gen_met' in pl_module.preprocessing.keys():
+            preprocessing = pl_module.preprocessing['gen_met']
             # undo normalisation
             for key in ['gen', 'rec']:
-                met_dict[key] = gen_met_norm.inverse(met_dict[key]) # type: ignore
+                met_dict[key] = preprocessing.inverse(met_dict[key]) # type: ignore
 
         ########################################################################
         # torch.Tensor to vector.MomentumNumpy2D
@@ -129,6 +133,10 @@ class ResultWriter(Callback):
                     trainer,
                     pl_module
     ) -> None:
+        if trainer.log_dir is None:
+            raise RuntimeError
+        log_dir = Path(trainer.log_dir)
+
         for key, value in self.met_dict.items():
             algo, component = key.split('_')
             self.file[f'met/{algo}/{component}'] = value
@@ -138,3 +146,5 @@ class ResultWriter(Callback):
             self.file[f'residual/{algo}/{component}'] = value
 
         self.file.close()
+
+        analyse_result(log_dir)

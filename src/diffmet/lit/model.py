@@ -1,16 +1,17 @@
 from typing import Final
 from lightning import LightningModule
 import torch
-from torch import Tensor
 from torch import nn
+from torch import Tensor
 from torch.nn.modules import ModuleDict
 from tensordict import TensorDict
 from torchmetrics import MetricCollection
-from .data.transforms.compose import Compose
-from .optim import configure_optimizers
-from .metrics import Bias, Resolution
-from .utils.math import rectify_phi, to_polar
-from .models.base import Model
+from ..metrics import Bias, Resolution
+from ..utils.math import rectify_phi, to_polar
+from ..models import L1PFModel, DelphesModel
+from .utils import get_class
+from ..optim import configure_optimizers
+from ..data.transforms import SequentialBijection
 
 
 DEFAULT_PT_BINNING: Final[list[tuple[float, float]]] = [
@@ -23,17 +24,29 @@ DEFAULT_PT_BINNING: Final[list[tuple[float, float]]] = [
 class LitModel(LightningModule):
 
     def __init__(self,
-                 augmentation: Compose,
-                 preprocessing: Compose,
-                 model: Model,
+                 augmentation,
+                 preprocessing,
+                 model: L1PFModel | DelphesModel,
                  criterion,
+                 optimizer_class_path: str = 'torch.optim.AdamW',
+                 lr: float = 3.0e-4,
+                 optimizer_init_args: dict = {},
                  pt_binning: list[tuple[float, float]] = DEFAULT_PT_BINNING,
     ) -> None:
         super().__init__()
-        self.augmentation = augmentation
-        self.preprocessing = preprocessing
+        self.save_hyperparameters("lr")
+        self.augmentation = nn.Sequential(*augmentation)
+
+        self.preprocessing = ModuleDict({
+            key: SequentialBijection(*value)
+            for key, value in preprocessing.items()
+        })
+
         self.model = model.to_tensor_dict_module()
         self.criterion = criterion
+
+        self.optimizer_class = get_class(optimizer_class_path)
+        self.optimizer_init_args = optimizer_init_args
 
         self.pt_binning = pt_binning
         self.val_metrics = self.build_metrics(self.pt_binning, 'val')
@@ -66,9 +79,13 @@ class LitModel(LightningModule):
     def training_step(self, # type: ignore
                       input: TensorDict,
     ) -> Tensor:
-        output = self.augmentation(input)
-        output = self.preprocessing(output)
-        output = self.model(output)
+        input = self.augmentation(input)
+        for key, value in self.preprocessing.items():
+            input[key] = value(input[key])
+
+
+        output = self.model(input)
+
         loss = self.criterion(input=output['rec_met'], target=output['gen_met'])
         self.log('train_loss', loss, prog_bar=True)
         return loss
@@ -78,18 +95,18 @@ class LitModel(LightningModule):
                   metrics: ModuleDict,
                   stage: str,
     ) -> None:
-        # eval step doesn't require data augmentation
-        output = self.preprocessing(input)
-        output = self.model(output)
+        for key, value in self.preprocessing.items():
+            input[key] = value(input[key])
+        output = self.model(input)
         loss = self.criterion(input=output['rec_met'], target=output['gen_met'])
 
         gen_met = output['gen_met']
         rec_met = output['rec_met']
-        if 'gen_met_norm' in self.preprocessing.keys():
-            gen_met_norm = self.preprocessing['gen_met_norm']
+        if 'gen_met' in self.preprocessing.keys():
+            met_preprocessing = self.preprocessing['gen_met']
             # undo normalisation
-            gen_met: Tensor = gen_met_norm.inverse(gen_met) # type: ignore
-            rec_met: Tensor = gen_met_norm.inverse(rec_met) # type: ignore
+            gen_met: Tensor = met_preprocessing.inverse(gen_met) # type: ignore
+            rec_met: Tensor = met_preprocessing.inverse(rec_met) # type: ignore
 
         # (px, py) to (pt, phi)
         gen_met_polar = to_polar(gen_met)
@@ -144,10 +161,23 @@ class LitModel(LightningModule):
     def on_test_epoch_end(self):
         return self._on_eval_epoch_end(metrics=self.test_metrics)
 
-    def predict_step(self, input): # type: ignore[override]
-        output = self.preprocessing(input)
-        output = self.model(output)
+    def predict_step(self, # type: ignore[override]
+                     input
+    ):
+        for key, value in self.preprocessing.items():
+            input[key] = value(input[key])
+
+        output = self.model(input)
         rec_met = output['rec_met']
-        if 'gen_met_norm' in self.preprocessing.keys():
-            rec_met: Tensor = self.preprocessing['gen_met_norm'].inverse(rec_met) # type: ignore
+
+        if preprocessing := self.preprocessing.get('gen_met'):
+            rec_met = preprocessing.inverse(rec_met)
         return rec_met
+
+    def configure_optimizers(self):
+        return configure_optimizers(
+            model=self,
+            optimizer_class=self.optimizer_class,
+            lr=self.hparams['lr'],
+            **self.optimizer_init_args
+        )

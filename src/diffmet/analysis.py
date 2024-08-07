@@ -169,7 +169,6 @@ def plot_resolution(stat_dict,
     ax_ratio.set_xlabel(f'Generated {component_label} [{component_unit}]')
     ax_main.set_ylabel(rf'{component_label} resolution, $\sigma$ [{component_unit}]')
     ax_ratio.set_ylabel(r'$\sigma_{PF} - \sigma$')
-    ax_main.set_xlim(*stat_dict['rec'].range)
 
     for key, stat in stat_dict.items():
         stat.plot_resolution(

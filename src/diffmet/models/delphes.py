@@ -23,7 +23,6 @@ class DelphesModel(Model):
         y = self.regression_head(z)
         return y
 
-
     def to_tensor_dict_module(self):
         in_keys: list[NestedKey] = [
             'track',

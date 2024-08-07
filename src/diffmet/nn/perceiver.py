@@ -3,7 +3,6 @@ import torch.nn as nn
 from torch import Tensor
 from .attention import CrossAttentionModule
 from .attention import SelfAttentionModule
-from .aggregator import MaskedMean
 
 
 class PerceiverEncoder(nn.Module):
