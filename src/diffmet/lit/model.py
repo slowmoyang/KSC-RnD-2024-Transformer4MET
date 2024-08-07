@@ -1,6 +1,7 @@
 from typing import Final
 from lightning import LightningModule
 import torch
+from torch import nn
 from torch import Tensor
 from torch.nn.modules import ModuleDict
 from tensordict import TensorDict
@@ -10,7 +11,7 @@ from ..utils.math import rectify_phi, to_polar
 from ..models import L1PFModel, DelphesModel
 from .utils import get_class
 from ..optim import configure_optimizers
-from ..data.transforms import TransformSequential
+from ..data.transforms import SequentialBijection
 
 
 DEFAULT_PT_BINNING: Final[list[tuple[float, float]]] = [
@@ -34,12 +35,13 @@ class LitModel(LightningModule):
     ) -> None:
         super().__init__()
         self.save_hyperparameters("lr")
-
-        self.augmentation = ModuleDict(augmentation)
+        self.augmentation = nn.Sequential(*augmentation)
 
         self.preprocessing = ModuleDict({
-            key: TransformSequential(value) if isinstance(value, list) else value
-            for key, value in preprocessing.items()})
+            key: SequentialBijection(*value)
+            for key, value in preprocessing.items()
+        })
+
         self.model = model.to_tensor_dict_module()
         self.criterion = criterion
 
@@ -77,9 +79,7 @@ class LitModel(LightningModule):
     def training_step(self, # type: ignore
                       input: TensorDict,
     ) -> Tensor:
-        for key, value in self.augmentation.items():
-            input[key] = value(input[key])
-
+        input = self.augmentation(input)
         for key, value in self.preprocessing.items():
             input[key] = value(input[key])
 
@@ -161,13 +161,17 @@ class LitModel(LightningModule):
     def on_test_epoch_end(self):
         return self._on_eval_epoch_end(metrics=self.test_metrics)
 
-    def predict_step(self, input): # type: ignore[override]
+    def predict_step(self, # type: ignore[override]
+                     input
+    ):
         for key, value in self.preprocessing.items():
             input[key] = value(input[key])
+
         output = self.model(input)
         rec_met = output['rec_met']
-        if 'gen_met' in self.preprocessing.keys():
-            rec_met: Tensor = self.preprocessing['gen_met'].inverse(rec_met) # type: ignore
+
+        if preprocessing := self.preprocessing.get('gen_met'):
+            rec_met = preprocessing.inverse(rec_met)
         return rec_met
 
     def configure_optimizers(self):

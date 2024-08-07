@@ -3,13 +3,10 @@ from torch import Tensor
 from torch.nn import Sequential
 
 
-class TransformSequential(Sequential):
-    """
-    one-to-one
-    """
+class SequentialBijection(Sequential):
 
-    def __init__(self, transform_list: list) -> None:
-        super().__init__(*transform_list)
+    def __init__(self, *args) -> None:
+        super().__init__(*args)
 
     @torch.no_grad()
     def inverse(self, input: Tensor) -> Tensor:
