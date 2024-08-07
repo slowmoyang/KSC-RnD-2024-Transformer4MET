@@ -23,11 +23,15 @@ echo "MAMBA_EXE=${MAMBA_EXE}"
 eval "$(${MAMBA_EXE} shell hook --shell=bash)"
 micromamba activate diffmet-py311
 
-python train.py \
+./train.py \
     --data ./config/data/delphes/neuron.yaml \
+    --data ./config/sampler/FlatGenMETpTRandomSampler.yaml \
     --model ./config/model/delphes/perceiver.yaml \
-    --trainer ./config/trainer/main.yaml \
-    --optimizer ./config/optimizer/AdamW.yaml
+    --model ./config/augmentation/delphes/base.yaml \
+    --model ./config/preprocessing/delphes/signlog1pabs.yaml \
+    --model ./config/loss/Huber.yaml \
+    --model ./config/optimizer/AdamW.yaml \
+    --trainer ./config/trainer/base.yaml
 
 echo "END: $(date)"
 exit 0
