@@ -1,0 +1,9 @@
+dataset_class_path: diffmet.data.datasets.DelphesDataset
+batch_size: 64
+eval_batch_size: 128
+train_files:
+  - /hdfs/user/seyang/KSC-RnD-2024/ntuple/hdf5/TTto2L2Nu-2Jets/000000-0_high-met.h5
+val_files:
+  - /hdfs/user/seyang/KSC-RnD-2024/ntuple/hdf5/TTto2L2Nu-2Jets/000000-0_high-met.h5
+test_files:
+  - /hdfs/user/seyang/KSC-RnD-2024/ntuple/hdf5/TTto2L2Nu-2Jets/000000-0_high-met.h5
