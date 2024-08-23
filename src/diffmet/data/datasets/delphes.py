@@ -1,5 +1,6 @@
 import time
 import os.path
+import glob
 import numpy as np
 import awkward as ak
 from tensordict import TensorDict
@@ -205,6 +206,12 @@ class DelphesDataset(TensorDictListDataset):
 
     @classmethod
     def load(cls, path_list: list[str]):
+        """
+        Args:
+            path_list: a list of paths, which can contain a glob pattern
+        Returns:
+            DelphesDataset
+        """
         _, suffix = os.path.splitext(path_list[0])
         if suffix == '.root':
             method = cls._from_root
@@ -214,10 +221,11 @@ class DelphesDataset(TensorDictListDataset):
             raise RuntimeError(f'{suffix=}')
 
         dataset = cls([])
-        for path in path_list:
-            print(f'loading {path}', end='')
-            start = time.time()
-            dataset += method(path=path)
-            elapsed_time = time.time() - start
-            print(f' ({elapsed_time:.1f} s)')
+        for pattern in path_list:
+            for path in glob.glob(pattern):
+                print(f'loading {path}', end='')
+                start = time.time()
+                dataset += method(path=path)
+                elapsed_time = time.time() - start
+                print(f' ({elapsed_time:.1f} s)')
         return dataset
