@@ -195,3 +195,4 @@ pyrightconfig.json
 
 lightning_logs/
 .lr_find*
+logs/
