@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch import Tensor
+from torch.nn.modules.transformer import _get_clones
 from .attention import CrossAttentionModule
 from .attention import SelfAttentionModule
 
@@ -16,6 +17,7 @@ class PerceiverEncoder(nn.Module):
                  activation: str,
                  widening_factor: int,
                  dropout_p: float,
+                 weight_sharing: bool,
     ) -> None:
         """
         Args:
@@ -30,7 +32,6 @@ class PerceiverEncoder(nn.Module):
             name='latent',
             param=self.init_latent(latent_len, embed_dim)
         )
-        self.num_layers = num_layers
 
         self.cross_attn = CrossAttentionModule(
             embed_dim=embed_dim,
@@ -40,13 +41,18 @@ class PerceiverEncoder(nn.Module):
             dropout_p=dropout_p,
         )
 
-        self.self_attn = SelfAttentionModule(
+        block = SelfAttentionModule(
             embed_dim=embed_dim,
             num_heads=num_heads,
             activation=activation,
             widening_factor=widening_factor,
             dropout_p=dropout_p
         )
+
+        if weight_sharing:
+            self.block_list = nn.ModuleList([block] * num_layers)
+        else:
+            self.block_list = _get_clones(block, num_layers)
 
     @staticmethod
     def init_latent(length: int,
@@ -63,8 +69,9 @@ class PerceiverEncoder(nn.Module):
             target=latent,
             source=input,
             source_data_mask=data_mask)
-        for _ in range(self.num_layers):
-            z = self.self_attn(input=z, data_mask=None)
+
+        for block in self.block_list:
+            z = block(input=z, data_mask=None)
         # FIXME
         return z
 
@@ -80,6 +87,7 @@ class Perceiver(nn.Module):
                  num_layers: int,
                  activation: str,
                  widening_factor: int,
+                 weight_sharing: bool,
     ):
         super().__init__()
 
@@ -91,6 +99,7 @@ class Perceiver(nn.Module):
             num_layers=num_layers,
             activation=activation,
             widening_factor=widening_factor,
+            weight_sharing=weight_sharing,
         )
 
     def forward(self,
