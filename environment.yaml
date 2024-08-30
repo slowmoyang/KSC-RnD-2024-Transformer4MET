@@ -21,6 +21,7 @@ dependencies:
   - hist=2.7.3
   - pdfcombine=1.1.5
   - h5py=3.9.0
+  - python-htcondor
   - pip
   - pip:
     - tensordict==0.3.1
