@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 from pathlib import Path
 import torch
 from lightning.pytorch.cli import LightningCLI
@@ -46,6 +47,9 @@ def run(trainer: Trainer,
 
 
 def main():
+    cmd = ' '.join(sys.argv)
+    print(f'🤖 parsing "{cmd}"')
+
     cli = LitCLI(
         model_class=LitModel,
         datamodule_class=DataModule,
@@ -53,7 +57,6 @@ def main():
         run=False, # used to de-activate automatic fitting.
         trainer_defaults={
             'max_epochs': 10,
-            'accelerator': 'gpu',
             'devices': [0],
             'log_every_n_steps': 1,
         },

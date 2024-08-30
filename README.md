@@ -34,14 +34,17 @@ python train.py -c ./config/test-l1pf-transformer-neuron.yaml
 
 If you want to understand how to configure it, I recommend reading [Configure hyperparameters from the CLI](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli.html#lightning-cli)
 
-### Submit a batch job with slurm
-Finally, you can submit a training job to a GPU cluster using slurm.
+### Submit a batch job with HTCondor
+Before submitting a job, u need to check available memory.
 ```bash
-mkdir ./logs # directory for slurm's output
-sbatch ./train.sh
-squeue -u $USER
+condor_status -compact -constraint 'Gpus > 0'
 ```
 
+You can submit a training job to a GPU cluster using `submit.py`
+```bash
+submit.py --config ./config/only-high-met.yaml --data ./config/data/delphes/knu/sanity-check.yaml --trainer ./config/trainer/sanity-check.yaml -e sanity-check -m 50GB
+```
 
-## TODO
-- [ ] flag to turn off weight sharing for Perceiver
+```bash
+condor_q $USER
+```

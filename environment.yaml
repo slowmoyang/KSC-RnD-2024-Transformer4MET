@@ -22,6 +22,7 @@ dependencies:
   - pdfcombine=1.1.5
   - h5py=3.9.0
   - python-htcondor
+  - coolname
   - pip
   - pip:
     - tensordict==0.3.1
