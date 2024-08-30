@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.nn.modules import ModuleDict
 from tensordict import TensorDict
 from torchmetrics import MetricCollection
-from ..metrics import Bias, Resolution
+from ..metrics import Bias, AbsBias, Resolution
 from ..utils.math import rectify_phi, to_polar
 from ..models import L1PFModel, DelphesModel
 from .utils import get_class
@@ -14,11 +14,12 @@ from ..optim import configure_optimizers
 from ..data.transforms import SequentialBijection
 
 
-DEFAULT_PT_BINNING: Final[list[tuple[float, float]]] = [
-    (0, 45),
-    (45, 70),
-    (70, 100),
-    (100, float('inf')),
+DEFAULT_PT_BINNING: Final[list[list[float]]] = [
+    [0, 45],
+    [45, 70],
+    [70, 100],
+    [100, 165],
+    [165, float('inf')],
 ]
 
 class LitModel(LightningModule):
@@ -31,7 +32,7 @@ class LitModel(LightningModule):
                  optimizer_class_path: str = 'torch.optim.AdamW',
                  lr: float = 3.0e-4,
                  optimizer_init_args: dict = {},
-                 pt_binning: list[tuple[float, float]] = DEFAULT_PT_BINNING,
+                 pt_binning: list[list[float]] = DEFAULT_PT_BINNING,
     ) -> None:
         super().__init__()
         self.save_hyperparameters("lr")
@@ -53,7 +54,7 @@ class LitModel(LightningModule):
         self.test_metrics = self.build_metrics(self.pt_binning, 'test')
 
     def build_metrics(self,
-                      pt_bins: list[tuple[float, float]],
+                      pt_bins: list[list[float]],
                       stage: str,
     ) -> ModuleDict:
         """
@@ -63,6 +64,7 @@ class LitModel(LightningModule):
         # FIXME gen met pt binning
         metrics = MetricCollection({
             'bias': Bias(),
+            'absbias': AbsBias(),
             'res': Resolution(),
         })
 
@@ -97,6 +99,7 @@ class LitModel(LightningModule):
     ) -> None:
         for key, value in self.preprocessing.items():
             input[key] = value(input[key])
+
         output = self.model(input)
         loss = self.criterion(input=output['rec_met'], target=output['gen_met'])
 
@@ -135,11 +138,18 @@ class LitModel(LightningModule):
 
         return output
 
-    def _on_eval_epoch_end(self, metrics: ModuleDict):
+    def _on_eval_epoch_end(self, metrics: ModuleDict, stage: str):
         log_dict = {}
         for component_dict in metrics.values():
             for each in component_dict.values():
                 log_dict |= each.compute() # type: ignore
+
+        # val_pt-300-350_phi_bias
+        for low, up in self.pt_binning:
+            pt_key = f'pt-{low:.0f}-{up:.0f}'
+            prefix = f'{stage}_{pt_key}'
+            log_dict[f'{prefix}_sum-px-absbias-py-absbias'] = log_dict[f'{prefix}_px_absbias'] + log_dict[f'{prefix}_py_absbias']
+
         self.log_dict(log_dict, prog_bar=True)
 
 
@@ -150,7 +160,7 @@ class LitModel(LightningModule):
                                stage='val')
 
     def on_validation_epoch_end(self):
-        return self._on_eval_epoch_end(metrics=self.val_metrics)
+        return self._on_eval_epoch_end(metrics=self.val_metrics, stage='val')
 
     def test_step(self, # type: ignore
                   input: TensorDict,
@@ -159,7 +169,7 @@ class LitModel(LightningModule):
                                stage='test')
 
     def on_test_epoch_end(self):
-        return self._on_eval_epoch_end(metrics=self.test_metrics)
+        return self._on_eval_epoch_end(metrics=self.test_metrics, stage='test')
 
     def predict_step(self, # type: ignore[override]
                      input
@@ -170,8 +180,9 @@ class LitModel(LightningModule):
         output = self.model(input)
         rec_met = output['rec_met']
 
-        if preprocessing := self.preprocessing.get('gen_met'):
-            rec_met = preprocessing.inverse(rec_met)
+        if 'gen_met' in self.preprocessing.keys():
+            met_preprocessing = self.preprocessing['gen_met']
+            rec_met = met_preprocessing.inverse(rec_met)
         return rec_met
 
     def configure_optimizers(self):
