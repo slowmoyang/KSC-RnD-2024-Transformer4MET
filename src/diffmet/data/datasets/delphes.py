@@ -220,9 +220,16 @@ class DelphesDataset(TensorDictListDataset):
         else:
             raise RuntimeError(f'{suffix=}')
 
+        # FIXME
+        pattern_list = path_list
+
         dataset = cls([])
-        for pattern in path_list:
-            for path in glob.glob(pattern):
+        for pattern in pattern_list:
+            path_list = glob.glob(pattern)
+            if len(path_list) == 0:
+                raise RuntimeError(f'globbing {pattern} gives an empty list')
+
+            for path in path_list:
                 print(f'loading {path}', end='')
                 start = time.time()
                 dataset += method(path=path)

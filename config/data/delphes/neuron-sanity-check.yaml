@@ -1,9 +1,0 @@
-dataset_class_path: diffmet.data.datasets.DelphesDataset
-batch_size: 128
-eval_batch_size: 128
-train_files:
-  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-0_high-met.h5
-val_files:
-  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-0_high-met.h5
-test_files:
-  - /scratch/x2719a04/data/ntuple/hdf5/TTto2L2Nu-2Jets/000000-0_high-met.h5
