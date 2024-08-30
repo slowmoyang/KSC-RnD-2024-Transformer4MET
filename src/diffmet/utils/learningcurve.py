@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from pathlib import Path
+import re
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -45,13 +46,15 @@ def plot_learning_curve(df_train: pd.DataFrame,
     ax.set_xlabel('Epoch')
     ax.set_ylabel(y)
 
-
     xticks = df_epoch['step']
     xticklabels = df_epoch['epoch']
     if len(xticklabels) > 10:
         xtick_step = len(df_epoch) // 5
         xticks = xticks[::xtick_step]
         xticklabels = xticklabels[::xtick_step]
+
+    if y.endswith(('_absbias', '_res')):
+        ax.set_ylim(0, None)
 
     ax.set_xticks(xticks)
     ax.set_xticklabels(xticklabels)
@@ -61,10 +64,50 @@ def plot_learning_curve(df_train: pd.DataFrame,
     return fig
 
 
-def make_learning_curves(log_dir: Path):
-    ckpt_path = next(log_dir.glob('checkpoints/**/*.ckpt'))
-    best_info = dict(each.split('=') for each in ckpt_path.stem.split('-'))
-    best_info = {key: int(value) for key, value in best_info.items()}
+def is_versioned(ckpt_path: Path) -> bool:
+    """check if a ckpt_path has a suffix for versioning
+    multiple `ModelCheckpoint`s create checkpoints with version suffix
+    """
+    return re.search(r"-v\d+$", ckpt_path.stem) is not None
+
+def get_info(ckpt_path, delimiter: str):
+    stem = ckpt_path.stem
+    #
+    # info = {}
+    # for each in stem.split(delimiter):
+    #     try:
+    #         key, value = each.split('=')
+    #     except Exception as error:
+    #         print(f'failed to parse {each}')
+    #         raise error
+    #     info[key] = value
+    #
+    info = dict(each.split('=') for each in stem.split(delimiter))
+    info = {key: int(value) if key in ('epoch', 'step') else float(value)
+            for key, value in info.items()}
+    return info
+
+
+# FIXME
+def save_figure(fig, output_path):
+    for suffix in ['.pdf', '.png']:
+        fig.savefig(output_path.with_suffix(suffix))
+    plt.close(fig)
+
+def make_learning_curves(log_dir: Path, metric: str, mode: str, delimiter: str = '__'):
+    # FIXME
+    info_dict = [get_info(each, delimiter=delimiter)
+                 for each in log_dir.glob('checkpoints/**/*.ckpt')
+                 if not each.stem.startswith('last') and not is_versioned(each)]
+
+    if mode == 'max':
+        decision_func = max
+    elif mode == 'min':
+        decision_func = min
+    else:
+        raise ValueError
+
+    best_info = decision_func(info_dict, key=lambda item: item[metric])
 
     metrics_path = log_dir / 'metrics.csv'
     df = pd.read_csv(metrics_path)
@@ -93,12 +136,9 @@ def make_learning_curves(log_dir: Path):
         if metric in ['step', 'epoch']:
             continue
         fig = plot_learning_curve(df_train=df_train, df_val=df_val, df_test=df_test, df_epoch=df_epoch, y=metric)
-        output_path = output_dir / metric
-        for suffix in ['.pdf', '.png']:
-            fig.savefig(output_path.with_suffix(suffix))
-        plt.close(fig)
+        save_figure(fig, output_dir / metric)
 
-        pdf_list.append(str(output_path.with_suffix('.pdf')))
+        pdf_list.append(str((output_dir / metric).with_suffix('.pdf')))
 
     combined_pdf = log_dir / 'learning-curve.pdf'
     pdfcombine.combine(files=pdf_list, output=str(combined_pdf))
