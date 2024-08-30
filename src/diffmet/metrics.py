@@ -23,6 +23,15 @@ class Bias(Metric):
         return residual.mean()
 
 
+class AbsBias(Bias):
+
+    higher_is_better = False
+
+    def compute(self):
+        residual = dim_zero_cat(self.residual)
+        return residual.mean().abs()
+
+
 class Resolution(Metric):
     residual: list[Tensor]
 
