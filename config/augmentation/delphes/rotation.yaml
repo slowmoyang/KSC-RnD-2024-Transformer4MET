@@ -1,0 +1,2 @@
+augmentation:
+  - class_path: diffmet.data.transforms.EventRotation

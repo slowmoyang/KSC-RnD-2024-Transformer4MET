@@ -1,0 +1,28 @@
+model:
+  pt_binning: [[158, 200], [200, 250], [250, 300], [300, 350], [350, 400]]
+trainer:
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        filename: '{epoch}__{step}__{val_loss:.6f}__{val_pt-350-400_sum-px-absbias-py-absbias:.3f}'
+        monitor: val_loss
+        mode: min
+        save_last: true
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        filename: '{epoch}__{step}__{val_loss:.6f}__{val_pt-350-400_sum-px-absbias-py-absbias:.3f}'
+        monitor: val_pt-350-400_sum-px-absbias-py-absbias
+        mode: min
+        save_last: true
+    - class_path: lightning.pytorch.callbacks.early_stopping.EarlyStopping
+      init_args:
+        monitor: val_pt-350-400_sum-px-absbias-py-absbias
+        mode: min
+        patience: 50
+        verbose: true
+    - class_path: diffmet.lit.callbacks.LearningCurvePlotter
+      init_args:
+        metric: ${trainer.callbacks[0].init_args.monitor} # index must point to ModelCheckpoint
+        mode: ${trainer.callbacks[0].init_args.mode}
+        delimiter: __
+    - class_path: diffmet.lit.callbacks.ResultWriter
