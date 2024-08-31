@@ -90,9 +90,10 @@ def run(experiment: str,
             arg_list.append(f'--{flag} {tmp_config}')
 
     arg_list += [
+        f'--trainer.logger.class_path lightning.pytorch.loggers.CSVLogger',
         f'--trainer.logger.init_args.save_dir {save_dir}',
         f'--trainer.logger.init_args.name {task}',
-        f'--trainer.logger.init_args.version {version}'
+        f'--trainer.logger.init_args.version {version}',
     ]
 
     arguments = ' '.join(arg_list)
@@ -136,7 +137,7 @@ def main():
 
     hostname = gethostname()
     if hostname == 'gate.sscc.uos.ac.kr':
-        host_alis = 'uos'
+        host_alias = 'uos'
     elif hostname.endswith('.knu.ac.kr'):
         host_alias = 'knu'
     else:
