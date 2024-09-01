@@ -8,9 +8,9 @@ dependencies:
   - pytorch=2.2.1
   - pytorch-cuda=12.1
   - lightning=2.2.1
-  - torchmetrics==1.3.2
-  - jsonargparse=4.27.7
-  - omegaconf
+  - torchmetrics=1.3.2
+  - jsonargparse=4.32.1
+  - omegaconf=2.3.0
   - uproot=5.3.1
   - vector=1.3.0
   - matplotlib=3.8.3
@@ -22,7 +22,7 @@ dependencies:
   - pdfcombine=1.1.5
   - h5py=3.9.0
   - python-htcondor
-  - coolname
+  - coolname=2.2.0
   - pip
   - pip:
     - tensordict==0.3.1
