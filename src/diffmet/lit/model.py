@@ -63,9 +63,9 @@ class LitModel(LightningModule):
         """
         # FIXME gen met pt binning
         metrics = MetricCollection({
-            'bias': Bias(),
-            'absbias': AbsBias(),
-            'res': Resolution(),
+            'bias': Bias(compute_on_cpu=True),
+            'absbias': AbsBias(compute_on_cpu=True),
+            'res': Resolution(compute_on_cpu=True),
         })
 
         eval_metrics = ModuleDict()
